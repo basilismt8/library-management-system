@@ -2,6 +2,7 @@
 using Library.Api.CustomActionFilters;
 using Library.Api.Models.Dto;
 using Library.Api.Repositories;
+using Library.Api.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,65 +11,42 @@ namespace Library.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+
     public class AuthController : ControllerBase
     {
-        private readonly UserManager<IdentityUser> userManager;
-        private readonly ITokenRepository tokenRepository;
-        private readonly IMapper mapper;
+        private readonly IAuthService _authService;
 
-        public AuthController(UserManager<IdentityUser> userManager, ITokenRepository tokenRepository, IMapper mapper)
+        public AuthController(IAuthService authService)
         {
-            this.userManager = userManager;
-            this.tokenRepository = tokenRepository;
-            this.mapper = mapper;
+            _authService = authService;
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequestDto registerRequestDto)
+        public async Task<IActionResult> Register(
+            [FromBody] RegisterRequestDto dto,
+            CancellationToken cancellationToken)
         {
-            var ideintityUser = new IdentityUser 
-            { 
-                UserName = registerRequestDto.Username,
-                Email = registerRequestDto.Username
-            };
-            var identityResult = await userManager.CreateAsync(ideintityUser, registerRequestDto.Password);
-            if (identityResult.Succeeded)
-            {
-                if (registerRequestDto.Roles != null && registerRequestDto.Roles.Any()) 
-                {
-                   identityResult = await userManager.AddToRolesAsync(ideintityUser, registerRequestDto.Roles);
-                    if (identityResult.Succeeded)
-                    {
-                        return Ok("User is registerd!!!");
-                    }
-                }
-            }
-            return BadRequest(identityResult.Errors);
+            var result = await _authService.RegisterAsync(
+                dto, cancellationToken);
+
+            if (!result.Success)
+                return StatusCode(result.StatusCode, result.Error);
+
+            return Ok(result.Data);
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequestDto)
+        public async Task<IActionResult> Login(
+            [FromBody] LoginRequestDto dto,
+            CancellationToken cancellationToken)
         {
-            var user = await userManager.FindByEmailAsync(loginRequestDto.Username);
-            if (user != null)
-            {
-                var signInResult = await userManager.CheckPasswordAsync(user, loginRequestDto.Password);
-                if (signInResult)
-                {
-                    var roles = await userManager.GetRolesAsync(user);
-                    if (roles != null)
-                    {
-                        var jwtToken = tokenRepository.createJWTToken(user, roles.ToList());
-                        var respose = new LoginResponseDto
-                        {
-                            JwtToken = jwtToken
-                        };
-                        return Ok(respose);
-                    }
-                }
-            }
-            return BadRequest("Invalid login attempt");
+            var result = await _authService.LoginAsync(
+                dto, cancellationToken);
 
+            if (!result.Success)
+                return StatusCode(result.StatusCode, result.Error);
+
+            return Ok(result.Data);
         }
     }
 }

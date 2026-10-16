@@ -78,7 +78,7 @@ builder.Services.AddScoped<ILoanRepository, SQLLoanRepository>();
 builder.Services.AddScoped<ILoanHistoryRepository, SQLLoanHistoryRepository>();
 builder.Services.AddScoped<ITokenRepository, TokenRepository>();
 builder.Services.AddScoped<IEmailServiceInterface, EmailService>();
-
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<ILoanService, LoanService>();
 builder.Services.AddScoped<IFineService, FineService>();
