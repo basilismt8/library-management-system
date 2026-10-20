@@ -51,6 +51,17 @@ namespace Library.Api.Services
 
                 return ServiceResult<string>.BadRequest(errors);
             }
+            else 
+            {
+                if (dto.Roles != null && dto.Roles.Any())
+                {
+                    result = await _userManager.AddToRolesAsync(user, dto.Roles);
+                    if (result.Succeeded)
+                    {
+                        return ServiceResult<string>.Ok("User is registered!!!");
+                    }
+                }
+            }
 
             _logger.LogInformation(
                 "User {Username} registered successfully",
